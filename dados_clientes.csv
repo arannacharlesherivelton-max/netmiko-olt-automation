@@ -1,0 +1,4 @@
+ip,usuario,senha,tipo_dispositivo,vlan,nome_cliente
+192.168.1.10,admin,senha123,huawei,100,CLIENTE_JOAO
+192.168.1.11,admin,senha123,huawei,101,CLIENTE_MARIA
+192.168.1.12,admin,senha123,cisco_ios,102,EMPRESA_XYZ
