@@ -1,0 +1,49 @@
+import csv
+from netmiko import ConnectHandler
+from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
+
+ARQUIVO_CSV = 'dados_clientes.csv'
+
+def processar_lote_clientes():
+    # Abre o arquivo CSV para leitura
+    with open(ARQUIVO_CSV, mode='r', encoding='utf-8') as arquivo:
+        leitor = csv.DictReader(arquivo)
+        
+        for linha in leitor:
+            print(f"\n--- Iniciando provisionamento: {linha['nome_cliente']} (IP: {linha['ip']}) ---")
+            
+            equipamento = {
+                'device_type': linha['tipo_dispositivo'],
+                'host': linha['ip'],
+                'username': linha['usuario'],
+                'password': linha['senha'],
+                'port': 22,
+            }
+            
+            # Monta os comandos dinamicamente injetando os dados da planilha
+            comandos = [
+                f"vlan {linha['vlan']}",
+                f"description {linha['nome_cliente']}",
+                "quit"
+            ]
+            
+            executar_comandos(equipamento, comandos)
+
+def executar_comandos(dispositivo, comandos):
+    try:
+        # Abre a sessão e aplica as configurações
+        with ConnectHandler(**dispositivo) as conexao:
+            print(f"[+] Conectado a {dispositivo['host']}. Aplicando configurações...")
+            saida = conexao.send_config_set(comandos)
+            print("[+] Comandos executados com sucesso.")
+            
+    except NetmikoAuthenticationException:
+        print(f"[-] Erro: Falha de autenticação no IP {dispositivo['host']}.")
+    except NetmikoTimeoutException:
+        print(f"[-] Erro: Tempo esgotado (Timeout) no IP {dispositivo['host']}. Equipamento inacessível.")
+    except Exception as erro:
+        print(f"[-] Erro inesperado em {dispositivo['host']}: {erro}")
+
+if __name__ == '__main__':
+    processar_lote_clientes()
+    print("\nProcessamento em lote finalizado.")
