@@ -1,0 +1,50 @@
+from netmiko import ConnectHandler
+from netmiko.exceptions import NetmikoTimeoutException, NetmikoAuthenticationException
+
+# 1. Definição do equipamento alvo (Altere os dados conforme a rede do provedor)
+equipamento = {
+    'device_type': 'huawei', # Suporta centenas de fabricantes (ex: zte_zxros, cisco_ios, mikrotik_routeros)
+    'host': '192.168.1.10',
+    'username': 'admin',
+    'password': 'senha_segura_123',
+    'port': 22,
+}
+
+# 2. Sequência de comandos de provisionamento (Exemplo: criação de VLAN)
+comandos_configuracao = [
+    'vlan 100',
+    'description CLIENTES_FIBRA_01',
+    'quit',
+    'interface gigabitethernet 0/0/1',
+    'port link-type access',
+    'port default vlan 100',
+    'quit'
+]
+
+def provisionar_equipamento(dispositivo, comandos):
+    print(f"Tentando conectar ao equipamento {dispositivo['host']}...")
+    try:
+        # Abre a sessão SSH com o equipamento
+        with ConnectHandler(**dispositivo) as conexao:
+            print("Conexão SSH estabelecida com sucesso.")
+            
+            # Entra no modo de configuração e dispara a lista de comandos
+            saida = conexao.send_config_set(comandos)
+            
+            print("\n--- Log de Execução ---")
+            print(saida)
+            
+            # Opcional: Salvar as alterações na memória permanente (descomente a linha abaixo)
+            # conexao.save_config()
+            print("\nProvisionamento concluído e registrado.")
+            
+    except NetmikoAuthenticationException:
+        print("Falha na autenticação: Usuário ou senha incorretos.")
+    except NetmikoTimeoutException:
+        print("Tempo esgotado: Verifique se o equipamento está ligado e a porta 22 liberada.")
+    except Exception as erro:
+        print(f"Falha crítica na execução: {erro}")
+
+# Ponto de entrada do script
+if __name__ == '__main__':
+    provisionar_equipamento(equipamento, comandos_configuracao)
